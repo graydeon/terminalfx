@@ -1,0 +1,60 @@
+project_name: terminalfx
+schema_version: 1
+
+resolution:
+  width: 1920
+  height: 1080
+  fps: 60
+
+preview:
+  enabled: true
+  mode: auto
+  refresh_hz: 60
+  fullscreen: false
+  display_index: 0
+  transport_path: ../../run/preview-state.json
+  character_width: 160
+  character_height: 90
+
+source:
+  kind: mock
+  path: null
+  camera_index: 0
+  screen_index: 0
+  window_title: null
+  loop: true
+
+effects:
+  - type: ascii_quantize
+    label: ASCII levels
+    enabled: true
+    params:
+      levels: 9
+      invert: false
+      contrast: 1.15
+      brightness: 0.0
+  - type: terminal_tint
+    label: Green phosphor
+    enabled: true
+    params:
+      palette: green
+      scanlines: true
+      intensity: 0.85
+  - type: phosphor_trail
+    label: Soft persistence
+    enabled: false
+    params:
+      blend: 0.18
+      decay: 0.86
+
+audio:
+  enabled: true
+  waveform_resolution: 128
+  analysis_window_seconds: 1.0
+
+output:
+  directory: ../../output
+  video_path: ../../output/render.mp4
+  image_path: ../../output/frame.png
+  codec: mp4v
+  render_mode: offline

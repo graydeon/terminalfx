@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="220" viewBox="0 0 1040 220" role="img" aria-labelledby="title desc">
+  <title id="title">Terminal Effects</title>
+  <desc id="desc">Glitched ASCII-style terminal header for terminalfx.</desc>
+  <defs>
+    <clipPath id="glitch-band-a">
+      <rect x="34" y="102" width="790" height="18"/>
+    </clipPath>
+    <clipPath id="glitch-band-b">
+      <rect x="34" y="138" width="860" height="14"/>
+    </clipPath>
+    <clipPath id="glitch-band-c">
+      <rect x="34" y="170" width="790" height="10"/>
+    </clipPath>
+    <pattern id="scanlines" width="8" height="8" patternUnits="userSpaceOnUse">
+      <rect width="8" height="1" fill="#ffffff" opacity="0.08"/>
+    </pattern>
+  </defs>
+  <rect width="1040" height="220" rx="10" fill="#050505"/>
+  <rect x="14" y="14" width="1012" height="192" rx="7" fill="#0b0b0b" stroke="#e8e8e8" stroke-width="2"/>
+  <rect x="14" y="14" width="1012" height="192" rx="7" fill="url(#scanlines)" opacity="0.32"/>
+  <rect x="730" y="36" width="188" height="2" fill="#ff4fd8" opacity="0.85"/>
+  <rect x="755" y="43" width="62" height="2" fill="#5ff8ff" opacity="0.9"/>
+  <rect x="856" y="43" width="126" height="2" fill="#f4f4f4" opacity="0.65"/>
+  <rect x="70" y="196" width="180" height="2" fill="#5ff8ff" opacity="0.72"/>
+  <rect x="282" y="196" width="48" height="2" fill="#ff4fd8" opacity="0.85"/>
+  <text x="42" y="48" fill="#9affb1" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="20">
+    <tspan>$ terminalfx --preview ascii</tspan>
+  </text>
+  <text fill="#5ff8ff" opacity="0.62" transform="translate(-5 0)" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="22" letter-spacing="1">
+    <tspan x="42" y="120">| TERMINAL EFFECTS                                                |</tspan>
+  </text>
+  <text fill="#ff4fd8" opacity="0.58" transform="translate(5 0)" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="22" letter-spacing="1">
+    <tspan x="42" y="120">| TERMINAL EFFECTS                                                |</tspan>
+  </text>
+  <text fill="#f4f4f4" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="22" letter-spacing="1">
+    <tspan x="42" y="88">+------------------------------------------------------------------+</tspan>
+    <tspan x="42" y="120">| TERMINAL EFFECTS                                                |</tspan>
+    <tspan x="42" y="152">| ascii / pixel / phosphor video workstation                       |</tspan>
+    <tspan x="42" y="184">+------------------------------------------------------------------+</tspan>
+  </text>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="22" letter-spacing="1">
+    <text fill="#5ff8ff" opacity="0.9" clip-path="url(#glitch-band-a)" transform="translate(18 0)">
+      <tspan x="42" y="120">| TERMINAL EFFECTS                                                |</tspan>
+    </text>
+    <text fill="#ff4fd8" opacity="0.82" clip-path="url(#glitch-band-b)" transform="translate(-24 0)">
+      <tspan x="42" y="152">| ascii / pixel / phosphor video workstation                       |</tspan>
+    </text>
+    <text fill="#f4f4f4" opacity="0.78" clip-path="url(#glitch-band-c)" transform="translate(11 0)">
+      <tspan x="42" y="184">+------------------------------------------------------------------+</tspan>
+    </text>
+  </g>
+  <text x="905" y="184" fill="#9affb1" opacity="0.72" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="18">ERR:0x7F</text>
+</svg>
