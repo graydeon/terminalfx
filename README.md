@@ -1,4 +1,4 @@
-![Terminal Effects](assets/terminal-effects-header.svg)
+
 
 # terminalfx
 
