@@ -49,6 +49,32 @@ class SilentAudioAnalyzer:
         )
 
 
+class SampleAudioAnalyzer:
+    """Real audio analyzer backed by pre-extracted audio samples."""
+
+    def __init__(self, samples: np.ndarray, sample_rate: int) -> None:
+        self._samples = _mono(samples)
+        self._sample_rate = sample_rate
+        self._duration = (
+            float(len(self._samples) / sample_rate) if sample_rate > 0 else 0.0
+        )
+
+    def analyze_window(self, seconds: float) -> AudioFeatures:
+        if self._samples.size == 0:
+            return AudioFeatures()
+        center = int(seconds * self._sample_rate)
+        half_window = int(0.5 * self._sample_rate)
+        start = max(0, center - half_window)
+        end = min(len(self._samples), center + half_window)
+        window = self._samples[start:end]
+        if window.size == 0:
+            return AudioFeatures()
+        return analyze_samples(window, self._sample_rate)
+
+    def waveform_summary(self, resolution: int) -> WaveformSummary:
+        return waveform_summary(self._samples, self._sample_rate, resolution)
+
+
 def _mono(samples: np.ndarray) -> np.ndarray:
     data = samples.astype(np.float32)
     if data.ndim > 1:

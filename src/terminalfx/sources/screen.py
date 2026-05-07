@@ -117,7 +117,7 @@ class ScreenSource:
                 self._monitor.x + self._monitor.width,
                 self._monitor.y + self._monitor.height,
             ),
-            all_screens=True,
+            all_screens=False,
         )
         rgb = np.asarray(image.convert("RGB"), dtype=np.uint8)
         frame = rgb[:, :, ::-1].copy()

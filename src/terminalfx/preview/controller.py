@@ -5,6 +5,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from terminalfx.preview.transport import JsonPreviewTransport
+
 
 class PreviewProcessController:
     def __init__(self, config_path: Path, log_path: Path) -> None:
@@ -37,3 +39,16 @@ class PreviewProcessController:
             text=True,
         )
         log_file.close()
+
+    def stop(self) -> None:
+        if self.process is not None and self.process.poll() is None:
+            self.process.terminate()
+            try:
+                self.process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                self.process.kill()
+        self.process = None
+
+    def request_stop(self, transport: JsonPreviewTransport) -> None:
+        transport.send_stop()
+        self.stop()

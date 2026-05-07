@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from time import monotonic
 
 import typer
 
@@ -91,6 +92,75 @@ def config_doctor(config: Path = Path("examples/configs/default.yaml")) -> None:
     typer.echo(f"resolution: {resolution.width}x{resolution.height}@{resolution.fps}")
     typer.echo(f"effects: {len(stack.nodes)}")
     typer.echo("ok")
+
+
+@app.command("bench-fps")
+def bench_fps(
+    config: Path = Path("examples/configs/default.yaml"),
+    seconds: float = 5.0,
+    warmup: float = 1.0,
+) -> None:
+    """Benchmark raw pipeline FPS — no display, no TUI, no transport.
+
+    This measures pure processing throughput. If this shows 30+ FPS
+    but the preview window shows <30, the bottleneck is cv2.imshow/X11.
+    """
+    project = load_project(config)
+    source = create_source(project.source, project.resolution)
+    source.open()
+
+    try:
+        pipeline = RenderPipeline(
+            source, EffectStack.from_config(project.effects), project
+        )
+
+        typer.echo(f"warming up for {warmup}s...")
+        warmup_end = monotonic() + warmup
+        while monotonic() < warmup_end:
+            pipeline.render_next(project.preview.mode)
+
+        typer.echo(f"benchmarking for {seconds}s...")
+        frames = 0
+        bench_end = monotonic() + seconds
+        t0 = monotonic()
+        while monotonic() < bench_end:
+            pkt = pipeline.render_next(project.preview.mode)
+            if pkt is None:
+                typer.echo("WARNING: source exhausted, breaking early")
+                break
+            frames += 1
+
+        elapsed = monotonic() - t0
+        fps = frames / elapsed if elapsed > 0 else 0
+
+        typer.echo(f"\n{'='*50}")
+        typer.echo(f"  source:       {project.source.kind}")
+        typer.echo(
+            f"  resolution:   {project.resolution.width}x{project.resolution.height}"
+        )
+        typer.echo(f"  effects:      {len(pipeline.effect_stack.nodes)} enabled")
+        typer.echo(f"  frames:       {frames}")
+        typer.echo(f"  elapsed:      {elapsed:.2f}s")
+        typer.echo(f"  FPS:          {fps:.1f}")
+        if fps > 0:
+            typer.echo(f"  ms/frame:     {1000 / fps:.1f}")
+        typer.echo(f"{'='*50}")
+
+        if fps >= 30:
+            typer.echo(
+                "\nPipeline is fast. If preview shows <30 FPS, "
+                "bottleneck is cv2.imshow/X11 display."
+            )
+        else:
+            typer.echo(
+                "\nPipeline below 30 FPS. Try:\n"
+                "  1. Reduce resolution in config\n"
+                "  2. Disable effects (set enabled: false)\n"
+                "  3. Use PIXEL mode (set preview.mode: pixel)\n"
+                "  4. Match config resolution to source resolution"
+            )
+    finally:
+        source.close()
 
 
 class _pipeline:

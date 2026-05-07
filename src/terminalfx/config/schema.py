@@ -21,9 +21,9 @@ class SourceConfig:
 class PreviewConfig:
     enabled: bool = True
     mode: PreviewMode = PreviewMode.AUTO
-    display_index: int = 1
-    fullscreen: bool = True
-    refresh_hz: int = 60
+    display_index: int = 0
+    fullscreen: bool = False
+    refresh_hz: int = 30
     character_width: int = 160
     character_height: int = 90
     transport_path: Path = Path("run/preview-state.json")

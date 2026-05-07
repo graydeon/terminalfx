@@ -14,6 +14,16 @@ class MockSource:
         self.resolution = resolution
         self.name = name
         self.index = 0
+        # Precompute static patterns once
+        h, w = resolution.height, resolution.width
+        self._x_grad = np.clip(
+            np.linspace(0, 1, w, dtype=np.float32) * 120 + 40, 0, 255
+        ).astype(np.uint8)
+        self._y_grad = np.clip(
+            np.linspace(0, 1, h, dtype=np.float32)[:, None] * 140 + 20, 0, 255
+        ).astype(np.uint8)
+        self._x_wave = np.linspace(0, 1, w, dtype=np.float32)
+        self._y_wave = np.linspace(0, 1, h, dtype=np.float32)[:, None]
 
     def open(self) -> SourceInfo:
         self.index = 0
@@ -28,7 +38,9 @@ class MockSource:
         )
 
     def read(self, time: TimePoint | None = None) -> FramePacket:
-        point = time or TimePoint(seconds=self.index / self.resolution.fps, frame=self.index)
+        point = time or TimePoint(
+            seconds=self.index / self.resolution.fps, frame=self.index
+        )
         frame = self._frame(point)
         self.index = point.frame + 1
         return FramePacket(frame=frame, time=point, source_name=self.name)
@@ -40,25 +52,32 @@ class MockSource:
         return None
 
     def _frame(self, time: TimePoint) -> Frame:
-        height, width = self.resolution.height, self.resolution.width
-        frame = np.zeros((height, width, 3), dtype=np.uint8)
+        h, w = self.resolution.height, self.resolution.width
         phase = time.seconds
-        x = np.linspace(0, 1, width, dtype=np.float32)
-        y = np.linspace(0, 1, height, dtype=np.float32)[:, None]
+
+        # Build frame from precomputed gradients + cheap wave
         wave = (
-            np.sin((x * 10.0 + phase * 2.4) * math.pi) + np.cos((y * 8.0 - phase) * math.pi)
+            np.sin(self._x_wave * 10.0 + phase * 2.4)
+            + np.cos(self._y_wave * 8.0 - phase)
         ) * 0.5
-        frame[:, :, 1] = np.clip((wave + 1.0) * 95, 0, 255).astype(np.uint8)
-        frame[:, :, 2] = np.clip(x * 120 + 40, 0, 255).astype(np.uint8)
-        frame[:, :, 0] = np.clip(y * 140 + 20, 0, 255).astype(np.uint8)
-        center = (int((0.5 + math.sin(phase) * 0.2) * width), int(height * 0.5))
-        cv2.circle(frame, center, max(12, min(width, height) // 8), (220, 255, 230), 2)
+        green = np.clip((wave + 1.0) * 95, 0, 255).astype(np.uint8)
+
+        frame = np.zeros((h, w, 3), dtype=np.uint8)
+        frame[:, :, 0] = self._y_grad
+        frame[:, :, 1] = green
+        frame[:, :, 2] = self._x_grad
+
+        center = (
+            int((0.5 + math.sin(phase) * 0.2) * w),
+            int(h * 0.5),
+        )
+        cv2.circle(frame, center, max(12, min(w, h) // 8), (220, 255, 230), 2)
         cv2.putText(
             frame,
             "terminalfx",
-            (max(12, width // 20), max(32, height // 10)),
+            (max(12, w // 20), max(32, h // 10)),
             cv2.FONT_HERSHEY_SIMPLEX,
-            max(0.5, width / 900),
+            max(0.5, w / 900),
             (235, 255, 240),
             1,
             cv2.LINE_AA,

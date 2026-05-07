@@ -38,9 +38,9 @@ class TransportStatus(StrEnum):
 
 @dataclass(frozen=True, slots=True)
 class Resolution:
-    width: int = 1920
-    height: int = 1080
-    fps: int = 60
+    width: int = 640
+    height: int = 360
+    fps: int = 30
 
     def __post_init__(self) -> None:
         if self.width <= 0 or self.height <= 0 or self.fps <= 0:

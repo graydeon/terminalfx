@@ -19,6 +19,7 @@ class PreviewSnapshot:
     selected_effect_index: int
     effects: list[dict[str, object]]
     recording_armed: bool
+    stop_requested: bool = False
 
     @classmethod
     def from_session(cls, state: SessionState) -> PreviewSnapshot:

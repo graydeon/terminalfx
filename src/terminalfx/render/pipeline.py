@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from terminalfx.audio.features import SilentAudioAnalyzer
+from terminalfx.audio.features import SampleAudioAnalyzer, SilentAudioAnalyzer
 from terminalfx.config.schema import ProjectConfig
 from terminalfx.core.types import FramePacket, PreviewMode
 from terminalfx.effects.base import EffectContext
@@ -20,7 +20,7 @@ class RenderPipeline:
         self.source = source
         self.effect_stack = effect_stack
         self.config = config
-        self.audio = audio or SilentAudioAnalyzer()
+        self.audio = audio or _audio_analyzer_for(source)
 
     def render_next(self, preview_mode: PreviewMode | None = None) -> FramePacket | None:
         packet = self.source.read()
@@ -41,3 +41,11 @@ class RenderPipeline:
             source_name=packet.source_name,
             metadata=packet.metadata,
         )
+
+
+def _audio_analyzer_for(source: SourceProvider) -> SampleAudioAnalyzer | SilentAudioAnalyzer:
+    samples = getattr(source, "audio_samples", None)
+    sample_rate = getattr(source, "audio_sample_rate", 0)
+    if samples is not None and sample_rate > 0:
+        return SampleAudioAnalyzer(samples, sample_rate)
+    return SilentAudioAnalyzer()

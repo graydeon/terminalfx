@@ -1,13 +1,23 @@
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import cast
 
 import cv2
 import numpy as np
 
 from terminalfx.core.types import Frame
+
+# Re-exports for internal type narrowing
 from terminalfx.effects.base import EffectContext
 from terminalfx.effects.params import ParameterSchema, ParameterSpec
+
+
+def _f(value: object) -> float:
+    return float(cast("str | float | int", value))
+
+
+def _i(value: object) -> int:
+    return int(cast("str | float | int", value))
 
 
 class PassthroughEffect:
@@ -16,7 +26,7 @@ class PassthroughEffect:
     parameters = ParameterSchema(())
 
     def apply(self, frame: Frame, params: dict[str, object], context: EffectContext) -> Frame:
-        return frame.copy()
+        return frame  # no copy — caller owns the frame
 
 
 class TerminalTintEffect:
@@ -31,7 +41,9 @@ class TerminalTintEffect:
                 options=("green", "amber", "white", "cyan"),
             ),
             ParameterSpec("scanlines", "bool", True),
-            ParameterSpec("intensity", "float", 1.0, minimum=0.0, maximum=1.0, step=0.05),
+            ParameterSpec(
+                "intensity", "float", 1.0, minimum=0.0, maximum=1.0, step=0.05
+            ),
         )
     )
 
@@ -42,11 +54,13 @@ class TerminalTintEffect:
         "cyan": np.array([90, 220, 255], dtype=np.float32),
     }
 
-    def apply(self, frame: Frame, params: dict[str, object], context: EffectContext) -> Frame:
+    def apply(
+        self, frame: Frame, params: dict[str, object], context: EffectContext
+    ) -> Frame:
         palette = self._palettes[str(params["palette"])]
         gray = frame.mean(axis=2, keepdims=True).astype(np.float32) / 255.0
         tinted = gray * palette
-        intensity = _float_param(params["intensity"])
+        intensity = _f(params["intensity"])
         mixed = frame.astype(np.float32) * (1.0 - intensity) + tinted * intensity
         result = np.clip(mixed, 0, 255).astype(np.uint8)
         if bool(params["scanlines"]):
@@ -61,26 +75,32 @@ class AsciiQuantizeEffect:
         (
             ParameterSpec("levels", "int", 9, minimum=2, maximum=24, step=1),
             ParameterSpec("invert", "bool", False),
-            ParameterSpec("contrast", "float", 1.15, minimum=0.2, maximum=3.0, step=0.05),
-            ParameterSpec("brightness", "float", 0.0, minimum=-80.0, maximum=80.0, step=2.0),
+            ParameterSpec(
+                "contrast", "float", 1.15, minimum=0.2, maximum=3.0, step=0.05
+            ),
+            ParameterSpec(
+                "brightness", "float", 0.0, minimum=-80.0, maximum=80.0, step=2.0
+            ),
         )
     )
 
-    def apply(self, frame: Frame, params: dict[str, object], context: EffectContext) -> Frame:
+    def apply(
+        self, frame: Frame, params: dict[str, object], context: EffectContext
+    ) -> Frame:
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY).astype(np.float32)
+        contrast = _f(params["contrast"])
+        brightness = _f(params["brightness"])
         gray = np.clip(
-            (gray - 127.5) * _float_param(params["contrast"])
-            + 127.5
-            + _float_param(params["brightness"]),
-            0,
-            255,
+            (gray - 127.5) * contrast + 127.5 + brightness, 0, 255
         )
-        levels = _int_param(params["levels"])
+        levels = _i(params["levels"])
         step = 255.0 / max(1, levels - 1)
         quantized = np.round(gray / step) * step
         if bool(params["invert"]):
             quantized = 255 - quantized
-        result = cv2.cvtColor(np.clip(quantized, 0, 255).astype(np.uint8), cv2.COLOR_GRAY2BGR)
+        result = cv2.cvtColor(
+            np.clip(quantized, 0, 255).astype(np.uint8), cv2.COLOR_GRAY2BGR
+        )
         return cast(Frame, result)
 
 
@@ -89,28 +109,28 @@ class PhosphorTrailEffect:
     display_name = "Phosphor Trail"
     parameters = ParameterSchema(
         (
-            ParameterSpec("blend", "float", 0.18, minimum=0.0, maximum=0.9, step=0.01),
-            ParameterSpec("decay", "float", 0.86, minimum=0.0, maximum=1.0, step=0.01),
+            ParameterSpec(
+                "blend", "float", 0.18, minimum=0.0, maximum=0.9, step=0.01
+            ),
+            ParameterSpec(
+                "decay", "float", 0.86, minimum=0.0, maximum=1.0, step=0.01
+            ),
         )
     )
 
     def __init__(self) -> None:
         self._previous: Frame | None = None
 
-    def apply(self, frame: Frame, params: dict[str, object], context: EffectContext) -> Frame:
+    def apply(
+        self, frame: Frame, params: dict[str, object], context: EffectContext
+    ) -> Frame:
         if self._previous is None or self._previous.shape != frame.shape:
             self._previous = frame.copy()
             return frame.copy()
-        blend = _float_param(params["blend"])
-        decay = _float_param(params["decay"])
+        blend = _f(params["blend"])
+        decay = _f(params["decay"])
         trailed = cv2.addWeighted(frame, 1.0 - blend, self._previous, blend, 0)
-        self._previous = np.clip(trailed.astype(np.float32) * decay, 0, 255).astype(np.uint8)
+        self._previous = np.clip(
+            trailed.astype(np.float32) * decay, 0, 255
+        ).astype(np.uint8)
         return cast(Frame, trailed)
-
-
-def _float_param(value: object) -> float:
-    return float(cast(Any, value))
-
-
-def _int_param(value: object) -> int:
-    return int(cast(Any, value))

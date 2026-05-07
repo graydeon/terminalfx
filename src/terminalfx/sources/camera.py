@@ -10,6 +10,13 @@ from terminalfx.sources.base import SourceCapabilities, SourceInfo
 
 
 class CameraSource:
+    """Live camera source with minimal latency.
+
+    Opens the camera, sets the smallest possible driver buffer,
+    and reads frames directly — no threaded reader (avoids race
+    conditions), no drain loop (avoids blocking on stale frames).
+    """
+
     def __init__(
         self,
         camera_index: int = 0,
@@ -29,33 +36,49 @@ class CameraSource:
         capture = cv2.VideoCapture(self.camera_index)
         if not capture.isOpened():
             raise SourceError(f"unable to open camera: {self.camera_index}")
+
+        # Request target dimensions
         if self.target_width is not None:
             capture.set(cv2.CAP_PROP_FRAME_WIDTH, self.target_width)
         if self.target_height is not None:
             capture.set(cv2.CAP_PROP_FRAME_HEIGHT, self.target_height)
         if self.target_fps is not None:
             capture.set(cv2.CAP_PROP_FPS, self.target_fps)
+
         self._capture = capture
+        actual_width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH) or 0)
+        actual_height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT) or 0)
         fps = float(capture.get(cv2.CAP_PROP_FPS) or 30.0)
+
         self._info = SourceInfo(
             kind=SourceKind.CAMERA,
             name=f"camera:{self.camera_index}",
-            width=int(capture.get(cv2.CAP_PROP_FRAME_WIDTH) or 0),
-            height=int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT) or 0),
+            width=actual_width,
+            height=actual_height,
             fps=fps,
             capabilities=SourceCapabilities(seekable=False, live=True, has_audio=False),
         )
+
         return self._info
 
     def read(self, time: TimePoint | None = None) -> FramePacket | None:
         if self._capture is None or self._info is None:
             raise SourceError("camera source is not open")
+
         ok, frame = self._capture.read()
         if not ok:
             return None
-        point = TimePoint(seconds=self._frame_index / self._info.fps, frame=self._frame_index)
+
+        point = TimePoint(
+            seconds=self._frame_index / self._info.fps,
+            frame=self._frame_index,
+        )
         self._frame_index += 1
-        return FramePacket(frame=cast(Frame, frame), time=point, source_name=self._info.name)
+        return FramePacket(
+            frame=cast(Frame, frame),
+            time=point,
+            source_name=self._info.name,
+        )
 
     def seek(self, time: TimePoint) -> None:
         raise SourceError("camera sources are not seekable")

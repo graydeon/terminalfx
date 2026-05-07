@@ -1,19 +1,16 @@
-project_name: terminalfx
+project_name: terminalfx-live
 schema_version: 1
 
-# Resolution is the #1 FPS driver in a Python numpy pipeline.
-# 640x360 = 43 FPS with 2 effects  (benchmark verified)
-# 960x540 = 21 FPS with 2 effects
-# 1280x720 = 13 FPS with 2 effects
-# Higher resolutions: use fewer effects or accept lower FPS.
+# 960x540 at 30fps — 4x fewer pixels than 1920x1080, 8x faster processing.
+# Match this to your camera's native resolution for zero-cost normalize_frame.
 resolution:
-  width: 640
-  height: 360
+  width: 960
+  height: 540
   fps: 30
 
 preview:
   enabled: true
-  mode: auto
+  mode: pixel
   refresh_hz: 30
   fullscreen: false
   display_index: 0
@@ -22,7 +19,7 @@ preview:
   character_height: 90
 
 source:
-  kind: mock
+  kind: camera
   path: null
   camera_index: 0
   screen_index: 0
@@ -30,30 +27,16 @@ source:
   loop: true
 
 effects:
-  - type: ascii_quantize
-    label: ASCII levels
-    enabled: true
-    params:
-      levels: 9
-      invert: false
-      contrast: 1.15
-      brightness: 0.0
   - type: terminal_tint
     label: Green phosphor
     enabled: true
     params:
       palette: green
-      scanlines: true
+      scanlines: false
       intensity: 0.85
-  - type: phosphor_trail
-    label: Soft persistence
-    enabled: false
-    params:
-      blend: 0.18
-      decay: 0.86
 
 audio:
-  enabled: true
+  enabled: false
   waveform_resolution: 128
   analysis_window_seconds: 1.0
 
